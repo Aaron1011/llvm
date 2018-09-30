@@ -594,7 +594,6 @@ GlobalVariable *SanitizerCoverageModule::CreateFunctionLocalArrayInSection(
   Array->setSection(getSectionName(Section));
   Array->setAlignment(Ty->isPointerTy() ? DL->getPointerSize()
                                         : Ty->getPrimitiveSizeInBits() / 8);
-  GlobalsToAppendToCompilerUsed.push_back(Array);
   MDNode *MD = MDNode::get(F.getContext(), ValueAsMetadata::get(&F));
   Array->addMetadata(LLVMContext::MD_associated, *MD);
 
@@ -625,6 +624,24 @@ SanitizerCoverageModule::CreatePCArray(Function &F,
   PCArray->setInitializer(
       ConstantArray::get(ArrayType::get(IntptrPtrTy, N * 2), PCs));
   PCArray->setConstant(true);
+
+
+  // Unlike FunctionGuardArray and Function8bitCounterArray,
+  // PCArray is never directly referenced, so we need
+  // to ensure that LLVM doesn't try to delete it.
+
+  // If we were able to give PCArray a comdat,
+  // we don't need to explicitly mark` it as used - LLVM
+  // will treat it as live as long as the other comdat
+  // members (e.g. the function itself) are also live.
+
+  // If we didn't manage to give PCArray a comdat,
+  // we do need to explicitly mark it as used, since
+  // there would otherwise be nothing to prevent its
+  // removal.
+  if (!PCArray->hasComdat()) {
+    GlobalsToAppendToCompilerUsed.push_back(PCArray);
+  }
 
   return PCArray;
 }
