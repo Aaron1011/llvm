@@ -262,7 +262,7 @@ void DeadArgumentEliminationPass::FixupMetadataReferences(Function *OldFn, Funct
   std::pair<AssociatedGlobalsMap::iterator, AssociatedGlobalsMap::iterator> result = AssociatedGlobals.equal_range(OldFn);
   for (AssociatedGlobalsMap::iterator I = result.first; I != result.second; I++) {
     LLVM_DEBUG(dbgs() << "DeadArgumentEliminationPass - Updating metadata of global object "
-        << I->second->getName() << " to point at updated function " << NewFn->getName()) << "\n;
+        << I->second->getName() << " to point at updated function " << NewFn->getName() << "\n");
 
     MDNode *MD = MDNode::get(NewFn->getContext(), ValueAsMetadata::get(NewFn));
     I->second->setMetadata(LLVMContext::MD_associated, MD);
