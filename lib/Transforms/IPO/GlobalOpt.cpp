@@ -1743,7 +1743,7 @@ static bool deleteIfDead(
     return false;
 
   if (const Comdat *C = GV.getComdat())
-    if (!GV.hasLocalLinkage() && NotDiscardableComdats.count(C))
+    if (NotDiscardableComdats.count(C))
       return false;
 
   bool Dead;

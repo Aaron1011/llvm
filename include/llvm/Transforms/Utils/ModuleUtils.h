@@ -16,6 +16,11 @@
 
 #include "llvm/ADT/StringRef.h"
 #include <utility> // for std::pair
+#include <llvm/IR/GlobalObject.h>
+#include <map>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Metadata.h>
+#include <llvm/Support/Debug.h>
 
 namespace llvm {
 
@@ -28,6 +33,8 @@ class Constant;
 class StringRef;
 class Value;
 class Type;
+
+using AssociatedGlobalsMap = std::multimap<const Function *, GlobalObject *>;
 
 /// Append F to the list of global ctors of module M with the given Priority.
 /// This wraps the function in the appropriate structure and stores it along
@@ -95,6 +102,20 @@ void filterDeadComdatFunctions(
 /// semantic effect if it performs global initialization), we cannot produce a
 /// unique identifier for this module, so we return the empty string.
 std::string getUniqueModuleId(Module *M);
+
+/// Creates a map from Functions to GlobalObjects which reference them via MDNodes
+/// (e.g. MD_associated metadata). When we modify a function, we need
+/// to change any metadata which point at the old function
+/// to point at the new function (with dead args/return values removed)
+void collectAssociatedGlobals(Module *M, AssociatedGlobalsMap *AssociatedGlobals);
+
+/// Changes GlobalObject metadata that points at OldFn to point at NewFn, using
+/// the data collected from collectAssociatedGlobals.
+/// This should be used by transformations that 'modify' functions by deleting
+/// the original and replacing it with a modified version (e.g. DeadArgumentElimination,
+/// ArgumentPromotion). This should only be used when the new function should be conisdered to be
+/// 'the same' as the old one.
+void FixupMetadataReferences(AssociatedGlobalsMap *AssociatedGlobals, Function *OldFn, Function *NewFn);
 
 } // End llvm namespace
 

@@ -503,7 +503,14 @@ static const MCSymbolELF *getAssociatedSymbol(const GlobalObject *GO,
     report_fatal_error("MD_associated operand is not ValueAsMetadata");
 
   GlobalObject *OtherGO = dyn_cast<GlobalObject>(VM->getValue());
-  return OtherGO ? dyn_cast<MCSymbolELF>(TM.getSymbol(OtherGO)) : nullptr;
+  if (!OtherGO)
+    report_fatal_error("MD_associated ValueAsMetadata value is not GlobalObject");
+
+  MCSymbolELF *ElfSymbol = dyn_cast<MCSymbolELF>(TM.getSymbol(OtherGO));
+  if (!ElfSymbol)
+    report_fatal_error("MD_associated ValueAsMetadata value is not MCSymbolELF");
+
+  return ElfSymbol;
 }
 
 static unsigned getEntrySizeForKind(SectionKind Kind) {

@@ -246,6 +246,8 @@ bool DeadArgumentEliminationPass::DeleteDeadVarargs(Function &Fn) {
   for (auto MD : MDs)
     NF->addMetadata(MD.first, *MD.second);
 
+  FixupMetadataReferences(&AssociatedGlobals, &Fn, NF);
+
   // Fix up any BlockAddresses that refer to the function.
   Fn.replaceAllUsesWith(ConstantExpr::getBitCast(NF, Fn.getType()));
   // Delete the bitcast that we just created, so that NF does not
@@ -255,6 +257,17 @@ bool DeadArgumentEliminationPass::DeleteDeadVarargs(Function &Fn) {
   Fn.eraseFromParent();
   return true;
 }
+
+/*void DeadArgumentEliminationPass::FixupMetadataReferences(Function *OldFn, Function *NewFn) {
+  std::pair<AssociatedGlobalsMap::iterator, AssociatedGlobalsMap::iterator> result = AssociatedGlobals.equal_range(OldFn);
+  for (AssociatedGlobalsMap::iterator I = result.first; I != result.second; I++) {
+    LLVM_DEBUG(dbgs() << "DeadArgumentEliminationPass - Updating metadata of global object "
+        << I->second->getName() << " to point at updated function " << NewFn->getName() << "\n");
+
+    MDNode *MD = MDNode::get(NewFn->getContext(), ValueAsMetadata::get(NewFn));
+    I->second->setMetadata(LLVMContext::MD_associated, MD);
+  }
+}*/
 
 /// RemoveDeadArgumentsFromCallers - Checks if the given function has any
 /// arguments that are unused, and changes the caller parameters to be undefined
@@ -1077,6 +1090,8 @@ bool DeadArgumentEliminationPass::RemoveDeadStuffFromFunction(Function *F) {
   for (auto MD : MDs)
     NF->addMetadata(MD.first, *MD.second);
 
+  FixupMetadataReferences(&AssociatedGlobals, F, NF);
+
   // Now that the old function is dead, delete it.
   F->eraseFromParent();
 
@@ -1086,6 +1101,27 @@ bool DeadArgumentEliminationPass::RemoveDeadStuffFromFunction(Function *F) {
 PreservedAnalyses DeadArgumentEliminationPass::run(Module &M,
                                                    ModuleAnalysisManager &) {
   bool Changed = false;
+
+  LLVM_DEBUG(dbgs() << "DeadArgumentEliminationPass - finding associated globals\n");
+  collectAssociatedGlobals(&M, &AssociatedGlobals);
+  /*for (GlobalObject &GO: M.global_objects()) {
+    MDNode *MD = GO.getMetadata(LLVMContext::MD_associated);
+    if (!MD)
+      continue;
+
+    const MDOperand &Op = MD->getOperand(0);
+    if (!Op.get())
+      continue;
+
+    auto *VM = dyn_cast<ValueAsMetadata>(Op);
+    if (!VM)
+      report_fatal_error("MD_associated operand is not ValueAsMetadata");
+
+    Function *OtherFunc = dyn_cast<Function>(VM->getValue());
+    if (OtherFunc) {
+      AssociatedGlobals.insert(std::make_pair(OtherFunc, &GO));
+    }
+  }*/
 
   // First pass: Do a simple check to see if any functions can have their "..."
   // removed.  We can do this if they never call va_start.  This loop cannot be
@@ -1119,6 +1155,8 @@ PreservedAnalyses DeadArgumentEliminationPass::run(Module &M,
   // linkage and replace the passed in parameters with undef.
   for (auto &F : M)
     Changed |= RemoveDeadArgumentsFromCallers(F);
+
+  AssociatedGlobals.clear();
 
   if (!Changed)
     return PreservedAnalyses::all();

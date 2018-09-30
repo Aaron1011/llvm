@@ -710,9 +710,14 @@ inlineCallsImpl(CallGraphSCC &SCC, CallGraph &CG,
           // The function may be apparently dead, but if there are indirect
           // callgraph references to the node, we cannot delete it yet, this
           // could invalidate the CGSCC iterator.
-          CG[Callee]->getNumReferences() == 0) {
-        LLVM_DEBUG(dbgs() << "    -> Deleting dead function: "
-                          << Callee->getName() << "\n");
+          CG[Callee]->getNumReferences() == 0 &&
+          // Functions in a COMDAT require special handling
+          // to ensure that we always drop either all or none
+          // of its members. This is handled by 'removeDeadFunctions',
+          // which will be called later.
+          !Callee->hasComdat()) {
+        LLVM_DEBUG(dbgs() << "    -> Deleting dead function with real body: "
+                          << *Callee << "\n");
         CallGraphNode *CalleeNode = CG[Callee];
 
         // Remove any call graph edges from the callee to its callees.
@@ -809,11 +814,10 @@ bool LegacyInlinerBase::removeDeadFunctions(CallGraph &CG,
     // without also dropping the other members of the COMDAT.
     // The inliner doesn't visit non-function entities which are in COMDAT
     // groups so it is unsafe to do so *unless* the linkage is local.
-    if (!F->hasLocalLinkage()) {
-      if (F->hasComdat()) {
-        DeadFunctionsInComdats.push_back(F);
-        continue;
-      }
+    LLVM_DEBUG(dbgs() << "Preparing to delete function: " << F->getName() << " with comdat: " << F->getComdat() <<  "\n");
+    if (F->hasComdat()) {
+      DeadFunctionsInComdats.push_back(F);
+      continue;
     }
 
     RemoveCGN(CGN);

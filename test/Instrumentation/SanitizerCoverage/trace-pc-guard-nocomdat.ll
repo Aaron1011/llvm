@@ -40,3 +40,4 @@ entry:
 
 ; CHECK_TRACE_PC_GUARD-LABEL: define internal void @sancov.module_ctor() {
 
+; CHECK: @llvm.used = appending global [1 x i32*] [i32* @g.used1], section "llvm.metadata"

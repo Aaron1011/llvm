@@ -58,7 +58,7 @@ static void appendToGlobalArray(const char *Array, Module &M, Function *F,
                             IRB.getInt8PtrTy());
   }
 
-  // Build a 2 or 3 field global_ctor entry.  We don't take a comdat key.
+  // Build a 2 or 3 field glob`al_ctor entry.  We don't take a comdat key.
   Constant *CSVals[3];
   CSVals[0] = IRB.getInt32(Priority);
   CSVals[1] = F;
@@ -268,4 +268,37 @@ std::string llvm::getUniqueModuleId(Module *M) {
   SmallString<32> Str;
   MD5::stringifyResult(R, Str);
   return ("$" + Str).str();
+}
+
+void llvm::collectAssociatedGlobals(Module *M, AssociatedGlobalsMap *AssociatedGlobals) {
+  for (GlobalObject &GO: M->global_objects()) {
+    MDNode *MD = GO.getMetadata(LLVMContext::MD_associated);
+    if (!MD)
+      continue;
+
+    const MDOperand &Op = MD->getOperand(0);
+    if (!Op.get())
+      continue;
+
+    auto *VM = dyn_cast<ValueAsMetadata>(Op);
+    if (!VM)
+      report_fatal_error("MD_associated operand is not ValueAsMetadata");
+
+    Function *OtherFunc = dyn_cast<Function>(VM->getValue());
+    if (OtherFunc) {
+      AssociatedGlobals->insert(std::make_pair(OtherFunc, &GO));
+    }
+  }
+}
+
+void llvm::FixupMetadataReferences(AssociatedGlobalsMap *AssociatedGlobals, Function *OldFn, Function *NewFn) {
+  std::pair<AssociatedGlobalsMap::iterator, AssociatedGlobalsMap::iterator> result = AssociatedGlobals->equal_range(
+          OldFn);
+  for (AssociatedGlobalsMap::iterator I = result.first; I != result.second; I++) {
+    //LLVM_DEBUG(dbgs() << "DeadArgumentEliminationPass - Updating metadata of global object "
+    //<< I->second->getName() << " to point at updated function " << NewFn->getName() << "\n");
+
+    MDNode *MD = MDNode::get(NewFn->getContext(), ValueAsMetadata::get(NewFn));
+    I->second->setMetadata(LLVMContext::MD_associated, MD);
+  }
 }

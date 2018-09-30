@@ -19,7 +19,9 @@
 #include "llvm/IR/GlobalValue.h"
 #include "llvm/IR/Value.h"
 #include <string>
+#include <sstream>
 #include <utility>
+#include <iostream>
 
 namespace llvm {
 
@@ -100,7 +102,17 @@ public:
   bool hasComdat() const { return getComdat() != nullptr; }
   const Comdat *getComdat() const { return ObjComdat; }
   Comdat *getComdat() { return ObjComdat; }
-  void setComdat(Comdat *C) { ObjComdat = C; }
+  void setComdat(Comdat *C) {
+      std::ostringstream debug_str;
+      debug_str << "Trying to remove COMDAT " << ObjComdat << " from global object "<< this << " " << this->getName().str();
+
+      if (ObjComdat != nullptr && C == nullptr) {
+          std::cerr << debug_str.str() << std::endl;
+          assert(false);
+          report_fatal_error(debug_str.str());
+      }
+      ObjComdat = C;
+  }
 
   /// Check if this has any metadata.
   bool hasMetadata() const { return hasMetadataHashEntry(); }
