@@ -137,7 +137,7 @@ void GlobalDCEPass::MarkLive(GlobalValue &GV,
 PreservedAnalyses GlobalDCEPass::run(Module &M, ModuleAnalysisManager &MAM) {
   bool Changed = false;
 
-  LLVM_DEBUG(dbgs() << "DeadGlobalEliminationPass - finding associated globals\n");
+  /*LLVM_DEBUG(dbgs() << "DeadGlobalEliminationPass - finding associated globals\n");
   for (GlobalObject &GO: M.global_objects()) {
     MDNode *MD = GO.getMetadata(LLVMContext::MD_associated);
     if (!MD)
@@ -155,7 +155,7 @@ PreservedAnalyses GlobalDCEPass::run(Module &M, ModuleAnalysisManager &MAM) {
     if (OtherObject) {
       AssociatedGlobals.insert(std::make_pair(OtherObject, &GO));
     }
-  }
+  }*/
 
   // The algorithm first computes the set L of global variables that are
   // trivially live.  Then it walks the initialization of these variables to
@@ -324,12 +324,12 @@ bool GlobalDCEPass::RemoveUnusedGlobalValue(GlobalValue &GV) {
 }
 
 void GlobalDCEPass::DeleteMetadataReferences(GlobalObject *FN) {
-  std::pair<AssociatedGlobalsMap::iterator, AssociatedGlobalsMap::iterator> result = AssociatedGlobals.equal_range(FN);
+  /*std::pair<AssociatedGlobalsMap::iterator, AssociatedGlobalsMap::iterator> result = AssociatedGlobals.equal_range(FN);
   for (AssociatedGlobalsMap::iterator I = result.first; I != result.second; I++) {
     LLVM_DEBUG(dbgs() << "DeadArgumentEliminationPass - Deleting global object "
                       << I->second->getName() << " which pointed at now-deleted function " << FN->getName() << " via MD_associated\n");
 
     RemoveUnusedGlobalValue(*I->second);
     I->second->eraseFromParent();
-  }
+  }*/
 }
