@@ -1054,3 +1054,5 @@ if (LLVM_INCLUDE_BENCHMARKS)
   add_subdirectory(utils/benchmark)
   add_subdirectory(benchmarks)
 endif()
+
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")

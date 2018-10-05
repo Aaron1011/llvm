@@ -108,7 +108,7 @@ public:
   ///    directly to F.
   UseMap Uses;
 
-  /// Maps Functions to MDNodes which reference them
+  /// Maps Functions to GlobalObjects which reference them via MDNodes
   /// (e.g. MD_associated metadata). When we modify a function, we need
   /// to change any metadata which point at the old function
   /// to point at the new function (with dead args/return values removed)

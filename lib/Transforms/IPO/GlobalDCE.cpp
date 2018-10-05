@@ -137,6 +137,26 @@ void GlobalDCEPass::MarkLive(GlobalValue &GV,
 PreservedAnalyses GlobalDCEPass::run(Module &M, ModuleAnalysisManager &MAM) {
   bool Changed = false;
 
+  LLVM_DEBUG(dbgs() << "DeadGlobalEliminationPass - finding associated globals\n");
+  for (GlobalObject &GO: M.global_objects()) {
+    MDNode *MD = GO.getMetadata(LLVMContext::MD_associated);
+    if (!MD)
+      continue;
+
+    const MDOperand &Op = MD->getOperand(0);
+    if (!Op.get())
+      continue;
+
+    auto *VM = dyn_cast<ValueAsMetadata>(Op);
+    if (!VM)
+      report_fatal_error("MD_associated operand is not ValueAsMetadata");
+
+    GlobalObject *OtherObject = dyn_cast<GlobalObject>(VM->getValue());
+    if (OtherObject) {
+      AssociatedGlobals.insert(std::make_pair(OtherObject, &GO));
+    }
+  }
+
   // The algorithm first computes the set L of global variables that are
   // trivially live.  Then it walks the initialization of these variables to
   // compute the globals used to initialize them, which effectively builds a
@@ -253,26 +273,37 @@ PreservedAnalyses GlobalDCEPass::run(Module &M, ModuleAnalysisManager &MAM) {
   };
 
   NumFunctions += DeadFunctions.size();
-  for (Function *F : DeadFunctions)
+  for (Function *F : DeadFunctions) {
+    LLVM_DEBUG(dbgs() << "DeadGlobalEliminationPass: Deleting dead function " << F->getName() << "\n");
     EraseUnusedGlobalValue(F);
+    DeleteMetadataReferences(F);
+  }
 
   NumVariables += DeadGlobalVars.size();
-  for (GlobalVariable *GV : DeadGlobalVars)
+  for (GlobalVariable *GV : DeadGlobalVars) {
+    LLVM_DEBUG(dbgs() << "DeadGlobalEliminationPass: Deleting dead global variable " << GV->getName() << "\n");
     EraseUnusedGlobalValue(GV);
+    DeleteMetadataReferences(GV);
+  }
 
   NumAliases += DeadAliases.size();
-  for (GlobalAlias *GA : DeadAliases)
+  for (GlobalAlias *GA : DeadAliases) {
+    LLVM_DEBUG(dbgs() << "DeadGlobalEliminationPass: Deleting dead alias " << GA->getName() << "\n");
     EraseUnusedGlobalValue(GA);
+  }
 
   NumIFuncs += DeadIFuncs.size();
-  for (GlobalIFunc *GIF : DeadIFuncs)
+  for (GlobalIFunc *GIF : DeadIFuncs) {
+    LLVM_DEBUG(dbgs() << "DeadGlobalEliminationPass: Deleting dead IFunc " << GIF->getName() << "\n");
     EraseUnusedGlobalValue(GIF);
+  }
 
   // Make sure that all memory is released
   AliveGlobals.clear();
   ConstantDependenciesCache.clear();
   GVDependencies.clear();
   ComdatMembers.clear();
+  AssociatedGlobals.clear();
 
   if (Changed)
     return PreservedAnalyses::none();
@@ -290,4 +321,15 @@ bool GlobalDCEPass::RemoveUnusedGlobalValue(GlobalValue &GV) {
     return false;
   GV.removeDeadConstantUsers();
   return GV.use_empty();
+}
+
+void GlobalDCEPass::DeleteMetadataReferences(GlobalObject *FN) {
+  std::pair<AssociatedGlobalsMap::iterator, AssociatedGlobalsMap::iterator> result = AssociatedGlobals.equal_range(FN);
+  for (AssociatedGlobalsMap::iterator I = result.first; I != result.second; I++) {
+    LLVM_DEBUG(dbgs() << "DeadArgumentEliminationPass - Deleting global object "
+                      << I->second->getName() << " which pointed at now-deleted function " << FN->getName() << " via MD_associated\n");
+
+    RemoveUnusedGlobalValue(*I->second);
+    I->second->eraseFromParent();
+  }
 }
