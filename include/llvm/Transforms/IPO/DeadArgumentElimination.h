@@ -90,7 +90,6 @@ public:
   }
 
   using UseMap = std::multimap<RetOrArg, RetOrArg>;
-  using AssociatedGlobalsMap = std::multimap<const Function *, GlobalObject *>;
 
   /// This maps a return value or argument to any MaybeLive return values or
   /// arguments it uses. This allows the MaybeLive values to be marked live
@@ -107,12 +106,6 @@ public:
   ///    This means that G calls F and passes one of its own (G's) arguments
   ///    directly to F.
   UseMap Uses;
-
-  /// Maps Functions to GlobalObjects which reference them via MDNodes
-  /// (e.g. MD_associated metadata). When we modify a function, we need
-  /// to change any metadata which point at the old function
-  /// to point at the new function (with dead args/return values removed)
-  AssociatedGlobalsMap AssociatedGlobals;
 
   using LiveSet = std::set<RetOrArg>;
   using LiveFuncSet = std::set<const Function *>;
@@ -144,7 +137,6 @@ private:
   bool RemoveDeadStuffFromFunction(Function *F);
   bool DeleteDeadVarargs(Function &Fn);
   bool RemoveDeadArgumentsFromCallers(Function &Fn);
-  void FixupMetadataReferences(Function *OldFn, Function *NewFN);
 };
 
 } // end namespace llvm
