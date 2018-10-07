@@ -32,15 +32,6 @@ public:
   PreservedAnalyses run(Module &M, ModuleAnalysisManager &);
 
 private:
-
-  using AssociatedGlobalsMap = std::multimap<const GlobalObject *, GlobalObject *>;
-
-  /// Maps GlobalObjects to GlobalObjects which reference them via MDNodes
-  /// (e.g. MD_associated metadata). When we modify a function, we need
-  /// to change any metadata which point at the old function
-  /// to point at the new function (with dead args/return values removed)
-  AssociatedGlobalsMap AssociatedGlobals;
-
   SmallPtrSet<GlobalValue*, 32> AliveGlobals;
 
   /// Global -> Global that uses this global.
@@ -59,7 +50,6 @@ private:
   bool RemoveUnusedGlobalValue(GlobalValue &GV);
 
   void ComputeDependencies(Value *V, SmallPtrSetImpl<GlobalValue *> &U);
-  void DeleteMetadataReferences(GlobalObject *FN);
 };
 
 }
