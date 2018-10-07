@@ -128,9 +128,11 @@ void GlobalDCEPass::MarkLive(GlobalValue &GV,
   if (Updates)
     Updates->push_back(&GV);
   if (Comdat *C = GV.getComdat()) {
-    for (auto &&CM : make_range(ComdatMembers.equal_range(C)))
-      MarkLive(*CM.second, Updates); // Recursion depth is only two because only
-                                     // globals in the same comdat are visited.
+    for (auto &&CM : make_range(ComdatMembers.equal_range(C))) {
+        LLVM_DEBUG(dbgs() << "DeadGlobalEliminationPass - marking COMDAT member " << CM.second->getName() << " as live due to " << GV << "\n";);
+        MarkLive(*CM.second, Updates); // Recursion depth is only two because only
+        // globals in the same comdat are visited.
+    }
   }
 }
 
@@ -186,8 +188,10 @@ PreservedAnalyses GlobalDCEPass::run(Module &M, ModuleAnalysisManager &MAM) {
     // Externally visible & appending globals are needed, if they have an
     // initializer.
     if (!GO.isDeclaration())
-      if (!GO.isDiscardableIfUnused())
-        MarkLive(GO);
+      if (!GO.isDiscardableIfUnused()) {
+          LLVM_DEBUG(dbgs() << "DeadGlobalEliminationPass - intrinsically live global " << GO << "\n");
+          MarkLive(GO);
+      }
 
     UpdateGVDependencies(GO);
   }
@@ -218,8 +222,10 @@ PreservedAnalyses GlobalDCEPass::run(Module &M, ModuleAnalysisManager &MAM) {
                                            AliveGlobals.end()};
   while (!NewLiveGVs.empty()) {
     GlobalValue *LGV = NewLiveGVs.pop_back_val();
-    for (auto *GVD : GVDependencies[LGV])
+    for (auto *GVD : GVDependencies[LGV]) {
+      LLVM_DEBUG(dbgs() << "DeadGlobalEliminationPass - marking live dependency " << GVD->getName() << " of " << LGV->getName() << "\n");
       MarkLive(*GVD, &NewLiveGVs);
+    }
   }
 
   // Now that all globals which are needed are in the AliveGlobals set, we loop
