@@ -631,7 +631,7 @@ SanitizerCoverageModule::CreatePCArray(Function &F,
   // to ensure that LLVM doesn't try to delete it.
 
   // If we were able to give PCArray a comdat,
-  // we don't need to explicitly mark it as used - LLVM
+  // we don't need to explicitly mark` it as used - LLVM
   // will treat it as live as long as the other comdat
   // members (e.g. the function itself) are also live.
 
@@ -639,7 +639,7 @@ SanitizerCoverageModule::CreatePCArray(Function &F,
   // we do need to explicitly mark it as used, since
   // there would otherwise be nothing to prevent its
   // removal.
-  if (!PCArray->getComdat()) {
+  if (!PCArray->hasComdat()) {
     GlobalsToAppendToCompilerUsed.push_back(PCArray);
   }
 
