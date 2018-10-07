@@ -575,7 +575,10 @@ Comdat *SanitizerCoverageModule::GetOrCreateFunctionComdat(Function &F) {
   assert(F.hasName());
   std::string Name = F.getName();
   if (F.hasLocalLinkage()) {
-    if (CurModuleUniqueId.empty()) return nullptr;
+    if (CurModuleUniqueId.empty()) {
+      LLVM_DEBUG(dbgs() << "SanitizerCoverage: not creating COMDAT for function " << F.getName());
+      return nullptr;
+    }
     Name += CurModuleUniqueId;
   }
   auto Comdat = CurModule->getOrInsertComdat(Name);
