@@ -262,14 +262,12 @@ PreservedAnalyses GlobalDCEPass::run(Module &M, ModuleAnalysisManager &MAM) {
   for (Function *F : DeadFunctions) {
     LLVM_DEBUG(dbgs() << "DeadGlobalEliminationPass: Deleting dead function " << F->getName() << "\n");
     EraseUnusedGlobalValue(F);
-    DeleteMetadataReferences(F);
   }
 
   NumVariables += DeadGlobalVars.size();
   for (GlobalVariable *GV : DeadGlobalVars) {
     LLVM_DEBUG(dbgs() << "DeadGlobalEliminationPass: Deleting dead global variable " << GV->getName() << "\n");
     EraseUnusedGlobalValue(GV);
-    DeleteMetadataReferences(GV);
   }
 
   NumAliases += DeadAliases.size();
