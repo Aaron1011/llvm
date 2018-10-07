@@ -139,26 +139,6 @@ void GlobalDCEPass::MarkLive(GlobalValue &GV,
 PreservedAnalyses GlobalDCEPass::run(Module &M, ModuleAnalysisManager &MAM) {
   bool Changed = false;
 
-  /*LLVM_DEBUG(dbgs() << "DeadGlobalEliminationPass - finding associated globals\n");
-  for (GlobalObject &GO: M.global_objects()) {
-    MDNode *MD = GO.getMetadata(LLVMContext::MD_associated);
-    if (!MD)
-      continue;
-
-    const MDOperand &Op = MD->getOperand(0);
-    if (!Op.get())
-      continue;
-
-    auto *VM = dyn_cast<ValueAsMetadata>(Op);
-    if (!VM)
-      report_fatal_error("MD_associated operand is not ValueAsMetadata");
-
-    GlobalObject *OtherObject = dyn_cast<GlobalObject>(VM->getValue());
-    if (OtherObject) {
-      AssociatedGlobals.insert(std::make_pair(OtherObject, &GO));
-    }
-  }*/
-
   // The algorithm first computes the set L of global variables that are
   // trivially live.  Then it walks the initialization of these variables to
   // compute the globals used to initialize them, which effectively builds a
