@@ -289,7 +289,6 @@ PreservedAnalyses GlobalDCEPass::run(Module &M, ModuleAnalysisManager &MAM) {
   ConstantDependenciesCache.clear();
   GVDependencies.clear();
   ComdatMembers.clear();
-  AssociatedGlobals.clear();
 
   if (Changed)
     return PreservedAnalyses::none();
@@ -307,15 +306,4 @@ bool GlobalDCEPass::RemoveUnusedGlobalValue(GlobalValue &GV) {
     return false;
   GV.removeDeadConstantUsers();
   return GV.use_empty();
-}
-
-void GlobalDCEPass::DeleteMetadataReferences(GlobalObject *FN) {
-  /*std::pair<AssociatedGlobalsMap::iterator, AssociatedGlobalsMap::iterator> result = AssociatedGlobals.equal_range(FN);
-  for (AssociatedGlobalsMap::iterator I = result.first; I != result.second; I++) {
-    LLVM_DEBUG(dbgs() << "DeadArgumentEliminationPass - Deleting global object "
-                      << I->second->getName() << " which pointed at now-deleted function " << FN->getName() << " via MD_associated\n");
-
-    RemoveUnusedGlobalValue(*I->second);
-    I->second->eraseFromParent();
-  }*/
 }
