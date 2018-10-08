@@ -716,8 +716,8 @@ inlineCallsImpl(CallGraphSCC &SCC, CallGraph &CG,
           // of its members. This is handled by 'removeDeadFunctions',
           // which will be called later.
           !Callee->hasComdat()) {
-        LLVM_DEBUG(dbgs() << "    -> Deleting dead function a with body: "
-                          << Callee << "\n");
+        LLVM_DEBUG(dbgs() << "    -> Deleting dead function with real body: "
+                          << *Callee << "\n");
         CallGraphNode *CalleeNode = CG[Callee];
 
         // Remove any call graph edges from the callee to its callees.
