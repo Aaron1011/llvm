@@ -587,13 +587,18 @@ Comdat *SanitizerCoverageModule::GetOrCreateFunctionComdat(Function &F) {
 }
 
 GlobalVariable *SanitizerCoverageModule::CreateFunctionLocalArrayInSection(
-    size_t NumElements, Function &F, Type *Ty, const char *Section) {
+  size_t NumElements, Function &F, Type *Ty, const char *Section) {
   ArrayType *ArrayTy = ArrayType::get(Ty, NumElements);
   auto Array = new GlobalVariable(
-      *CurModule, ArrayTy, false, GlobalVariable::PrivateLinkage,
-      Constant::getNullValue(ArrayTy), "__sancov_gen_");
-  if (auto Comdat = GetOrCreateFunctionComdat(F))
+          *CurModule, ArrayTy, false, GlobalVariable::PrivateLinkage,
+          Constant::getNullValue(ArrayTy), "__sancov_gen_");
+  if (auto Comdat = GetOrCreateFunctionComdat(F)) {
+    LLVM_DEBUG(dbgs() << "SanitizerCoverage: Using function COMDAT " << *Comdat);
     Array->setComdat(Comdat);
+  } else {
+    LLVM_DEBUG(dbgs() << "SanitizerCoverage: Unable to create COMDAT for function " << F.getName());
+    GlobalsToAppendToCompilerUsed.push_back(Array);
+  }
   Array->setSection(getSectionName(Section));
   Array->setAlignment(Ty->isPointerTy() ? DL->getPointerSize()
                                         : Ty->getPrimitiveSizeInBits() / 8);
@@ -627,24 +632,6 @@ SanitizerCoverageModule::CreatePCArray(Function &F,
   PCArray->setInitializer(
       ConstantArray::get(ArrayType::get(IntptrPtrTy, N * 2), PCs));
   PCArray->setConstant(true);
-
-
-  // Unlike FunctionGuardArray and Function8bitCounterArray,
-  // PCArray is never directly referenced, so we need
-  // to ensure that LLVM doesn't try to delete it.
-
-  // If we were able to give PCArray a comdat,
-  // we don't need to explicitly mark` it as used - LLVM
-  // will treat it as live as long as the other comdat
-  // members (e.g. the function itself) are also live.
-
-  // If we didn't manage to give PCArray a comdat,
-  // we do need to explicitly mark it as used, since
-  // there would otherwise be nothing to prevent its
-  // removal.
-  if (!PCArray->hasComdat()) {
-    GlobalsToAppendToCompilerUsed.push_back(PCArray);
-  }
 
   return PCArray;
 }
