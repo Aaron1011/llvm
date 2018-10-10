@@ -21,6 +21,7 @@
 #include <string>
 #include <sstream>
 #include <utility>
+#include <iostream>
 
 namespace llvm {
 
@@ -102,9 +103,12 @@ public:
   const Comdat *getComdat() const { return ObjComdat; }
   Comdat *getComdat() { return ObjComdat; }
   void setComdat(Comdat *C) {
+      std::ostringstream debug_str;
+      debug_str << "Trying to remove COMDAT " << ObjComdat << " from global object "<< this << " " << this->getName().str();
+
       if (ObjComdat != nullptr && C == nullptr) {
-          std::ostringstream debug_str;
-          debug_str << "Trying to remove COMDAT " << ObjComdat << " from global object "<< this << " " << this->getName().str();
+          std::cerr << debug_str << std::endl;
+          assert(false);
           report_fatal_error(debug_str.str());
       }
       ObjComdat = C;
