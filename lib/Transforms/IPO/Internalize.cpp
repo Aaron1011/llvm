@@ -119,10 +119,6 @@ bool InternalizePass::maybeInternalize(
     if (ExternalComdats.count(C))
       return false;
 
-    // If a comdat is not externally visible we can drop it.
-    if (auto GO = dyn_cast<GlobalObject>(&GV))
-      GO->setComdat(nullptr);
-
     if (GV.hasLocalLinkage())
       return false;
   } else {
