@@ -107,7 +107,7 @@ public:
       debug_str << "Trying to remove COMDAT " << ObjComdat << " from global object "<< this << " " << this->getName().str();
 
       if (ObjComdat != nullptr && C == nullptr) {
-          std::cerr << debug_str << std::endl;
+          std::cerr << debug_str.str() << std::endl;
           assert(false);
           report_fatal_error(debug_str.str());
       }
