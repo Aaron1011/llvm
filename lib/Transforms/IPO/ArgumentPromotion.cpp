@@ -999,7 +999,7 @@ PreservedAnalyses ArgumentPromotionPass::run(LazyCallGraph::SCC &C,
     Changed |= LocalChange;
   } while (LocalChange);
 
-  AssociatedGlobals.erase();
+  AssociatedGlobals.clear();
 
   if (!Changed)
     return PreservedAnalyses::all();
