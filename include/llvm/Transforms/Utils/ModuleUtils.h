@@ -34,6 +34,8 @@ class StringRef;
 class Value;
 class Type;
 
+using AssociatedGlobalsMap = std::multimap<const Function *, GlobalObject *>;
+
 /// Append F to the list of global ctors of module M with the given Priority.
 /// This wraps the function in the appropriate structure and stores it along
 /// side other global constructors. For details see
@@ -100,8 +102,6 @@ void filterDeadComdatFunctions(
 /// semantic effect if it performs global initialization), we cannot produce a
 /// unique identifier for this module, so we return the empty string.
 std::string getUniqueModuleId(Module *M);
-
-using AssociatedGlobalsMap = std::multimap<const Function *, GlobalObject *>;
 
 /// Creates a map from Functions to GlobalObjects which reference them via MDNodes
 /// (e.g. MD_associated metadata). When we modify a function, we need

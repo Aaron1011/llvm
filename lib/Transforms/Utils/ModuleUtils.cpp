@@ -270,7 +270,7 @@ std::string llvm::getUniqueModuleId(Module *M) {
   return ("$" + Str).str();
 }
 
-void collectAssociatedGlobals(Module *M, AssociatedGlobalsMap *AssociatedGlobals) {
+void llvm::collectAssociatedGlobals(Module *M, AssociatedGlobalsMap *AssociatedGlobals) {
   for (GlobalObject &GO: M->global_objects()) {
     MDNode *MD = GO.getMetadata(LLVMContext::MD_associated);
     if (!MD)
@@ -291,7 +291,7 @@ void collectAssociatedGlobals(Module *M, AssociatedGlobalsMap *AssociatedGlobals
   }
 }
 
-void FixupMetadataReferences(AssociatedGlobalsMap *AssociatedGlobals, Function *OldFn, Function *NewFn) {
+void llvm::FixupMetadataReferences(AssociatedGlobalsMap *AssociatedGlobals, Function *OldFn, Function *NewFn) {
   std::pair<AssociatedGlobalsMap::iterator, AssociatedGlobalsMap::iterator> result = AssociatedGlobals->equal_range(
           OldFn);
   for (AssociatedGlobalsMap::iterator I = result.first; I != result.second; I++) {
