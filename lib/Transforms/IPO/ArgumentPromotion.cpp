@@ -963,6 +963,8 @@ PreservedAnalyses ArgumentPromotionPass::run(LazyCallGraph::SCC &C,
                                              CGSCCUpdateResult &UR) {
   bool Changed = false, LocalChange;
 
+  collectAssociatedGlobals(C.begin()->getFunction().getParent(), &AssociatedGlobals);
+
   // Iterate until we stop promoting from this SCC.
   do {
     LocalChange = false;
@@ -990,11 +992,14 @@ PreservedAnalyses ArgumentPromotionPass::run(LazyCallGraph::SCC &C,
       // swaps out the particular function mapped to a particular node in the
       // graph.
       C.getOuterRefSCC().replaceNodeFunction(N, *NewF);
+      FixupMetadataReferences(&AssociatedGlobals, &OldF, NewF);
       OldF.eraseFromParent();
     }
 
     Changed |= LocalChange;
   } while (LocalChange);
+
+  AssociatedGlobals.erase();
 
   if (!Changed)
     return PreservedAnalyses::all();
@@ -1008,6 +1013,7 @@ namespace {
 struct ArgPromotion : public CallGraphSCCPass {
   // Pass identification, replacement for typeid
   static char ID;
+  AssociatedGlobalsMap AssociatedGlobals;
 
   explicit ArgPromotion(unsigned MaxElements = 3)
       : CallGraphSCCPass(ID), MaxElements(MaxElements) {
@@ -1053,6 +1059,8 @@ bool ArgPromotion::runOnSCC(CallGraphSCC &SCC) {
   if (skipSCC(SCC))
     return false;
 
+  collectAssociatedGlobals(&SCC.getCallGraph().getModule(), &AssociatedGlobals);
+
   // Get the callgraph information that we need to update to reflect our
   // changes.
   CallGraph &CG = getAnalysis<CallGraphWrapperPass>().getCallGraph();
@@ -1089,6 +1097,8 @@ bool ArgPromotion::runOnSCC(CallGraphSCC &SCC) {
           delete CG.removeFunctionFromModule(OldNode);
         else
           OldF->setLinkage(Function::ExternalLinkage);
+
+        FixupMetadataReferences(&AssociatedGlobals, OldF, NewF);
 
         // And updat ethe SCC we're iterating as well.
         SCC.ReplaceNode(OldNode, NewNode);

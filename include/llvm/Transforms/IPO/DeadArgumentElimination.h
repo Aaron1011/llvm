@@ -24,6 +24,7 @@
 #include "llvm/ADT/Twine.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/PassManager.h"
+#include "llvm/Transforms/Utils/ModuleUtils.h"
 #include <map>
 #include <set>
 #include <string>
@@ -90,7 +91,7 @@ public:
   }
 
   using UseMap = std::multimap<RetOrArg, RetOrArg>;
-  using AssociatedGlobalsMap = std::multimap<const Function *, GlobalObject *>;
+  //using AssociatedGlobalsMap = std::multimap<const Function *, GlobalObject *>;
 
   /// This maps a return value or argument to any MaybeLive return values or
   /// arguments it uses. This allows the MaybeLive values to be marked live
@@ -144,7 +145,7 @@ private:
   bool RemoveDeadStuffFromFunction(Function *F);
   bool DeleteDeadVarargs(Function &Fn);
   bool RemoveDeadArgumentsFromCallers(Function &Fn);
-  void FixupMetadataReferences(Function *OldFn, Function *NewFN);
+  //void FixupMetadataReferences(Function *OldFn, Function *NewFN);
 };
 
 } // end namespace llvm

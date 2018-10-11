@@ -13,6 +13,7 @@
 #include "llvm/Analysis/CGSCCPassManager.h"
 #include "llvm/Analysis/LazyCallGraph.h"
 #include "llvm/IR/PassManager.h"
+#include "llvm/Transforms/Utils/ModuleUtils.h"
 
 namespace llvm {
 
@@ -23,6 +24,7 @@ namespace llvm {
 /// direct (by-value) arguments.
 class ArgumentPromotionPass : public PassInfoMixin<ArgumentPromotionPass> {
   unsigned MaxElements;
+  AssociatedGlobalsMap AssociatedGlobals;
 
 public:
   ArgumentPromotionPass(unsigned MaxElements = 3u) : MaxElements(MaxElements) {}
