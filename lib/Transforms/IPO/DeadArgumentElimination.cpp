@@ -246,7 +246,7 @@ bool DeadArgumentEliminationPass::DeleteDeadVarargs(Function &Fn) {
   for (auto MD : MDs)
     NF->addMetadata(MD.first, *MD.second);
 
-  FixupMetadataReferences(AssociatedGlobals, &Fn, NF);
+  FixupMetadataReferences(&AssociatedGlobals, &Fn, NF);
 
   // Fix up any BlockAddresses that refer to the function.
   Fn.replaceAllUsesWith(ConstantExpr::getBitCast(NF, Fn.getType()));
@@ -1090,7 +1090,7 @@ bool DeadArgumentEliminationPass::RemoveDeadStuffFromFunction(Function *F) {
   for (auto MD : MDs)
     NF->addMetadata(MD.first, *MD.second);
 
-  FixupMetadataReferences(AssociatedGlobals, F, NF);
+  FixupMetadataReferences(&AssociatedGlobals, F, NF);
 
   // Now that the old function is dead, delete it.
   F->eraseFromParent();
